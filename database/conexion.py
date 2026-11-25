@@ -570,7 +570,7 @@ class GestorBaseDatos:
             cursor = self.conexion.cursor()
             cursor.execute("DELETE FROM empleados WHERE id_usuario = ?", (id_emp,))
             self.conexion.commit()
-            return True
+            return cursor.rowcount > 0
         except sqlite3.Error as e:
             print(f"[Error CRUD]: {e}")
             return False

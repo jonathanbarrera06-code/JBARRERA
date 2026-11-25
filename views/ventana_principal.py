@@ -277,8 +277,10 @@ class VentanaPrincipal(QWidget):
         layout_tiempos.addWidget(QLabel("ID del Proyecto:"))
         self.input_id_proy_tiempo = QLineEdit()
         layout_tiempos.addWidget(self.input_id_proy_tiempo)
-        layout_tiempos.addWidget(QLabel("Fecha (AAAA-MM-DD):"))
+        layout_tiempos.addWidget(QLabel("Fecha de Jornada Trabajada (AAAA-MM-DD):"))
         self.input_fecha_tiempo = QLineEdit()
+        self.input_fecha_tiempo.setPlaceholderText("Ej: 2026-11-25 (Día en que se ejecutó la tarea)")
+        self.input_fecha_tiempo.setToolTip("Ingrese la fecha exacta en que el empleado realizó las horas trabajadas.")
         layout_tiempos.addWidget(self.input_fecha_tiempo)
         layout_tiempos.addWidget(QLabel("Horas Trabajadas (1 - 24):"))
         self.input_horas_tiempo = QLineEdit()
@@ -417,14 +419,14 @@ class VentanaPrincipal(QWidget):
         except ValueError:
             QMessageBox.warning(
                 self,
-                "MSG_FECHA_ISO_INVALIDA"
+                TITULO_FECHA_INVALIDA, MSG_FECHA_ISO_INVALIDA
             )
             return
 
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "MSG_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
 
@@ -441,7 +443,7 @@ class VentanaPrincipal(QWidget):
         if exito:
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
             self.cargar_tabla_proyectos()
             self.input_id_proyecto.clear()
@@ -478,7 +480,7 @@ class VentanaPrincipal(QWidget):
         if not all([nombre, descripcion, fecha_inicio]):
             QMessageBox.warning(
                 self,
-                "TITULO_ADVERTENCIA"
+                "Advertencia", "Verifique los datos ingresados o la integridad del registro."
             )
             return
         try:
@@ -494,7 +496,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "MSG_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
         try:
@@ -507,7 +509,7 @@ class VentanaPrincipal(QWidget):
             self.cargar_tabla_proyectos()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
@@ -538,7 +540,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR_CONEXION",
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION,
             )
             return
         try:
@@ -559,7 +561,7 @@ class VentanaPrincipal(QWidget):
             self.input_fecha_proyecto.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
@@ -571,7 +573,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
 
@@ -608,10 +610,35 @@ class VentanaPrincipal(QWidget):
         if fila < 0:
             QMessageBox.warning(
                 self,
-                "TITULO_SIN_SELECCION"
+                TITULO_SIN_SELECCION, "Seleccione un registro de la tabla."
             )
             return
         self.cargar_proyecto_seleccionado(fila, 0)
+    def _validar_datos_empleados(self, datos: list[str]) -> float | None:
+        if not all(datos):
+            QMessageBox.warning(self, TITULO_CAMPOS_OBLIGATORIOS, )
+            return None
+        if not self.validar_rut(datos[1]):
+            QMessageBox.warning(self, "RUT inválido", "Ingrese un RUT chileno válido (ej: 12.345.678-5).")
+            return None
+        if not self.validar_telefono(datos[2]):
+            QMessageBox.warning(self, "Teléfono inválido", "Ingrese un teléfono chileno válido de 9 dígitos.")
+            return None
+        if not self.validar_email(datos[3]):
+            QMessageBox.warning(self, "Correo inválido", "Ingrese un correo electrónico válido (ej: usuario@dominio.cl).")
+            return None
+        if not self.validar_fecha(datos[4]) or not self.validar_fecha(datos[6]):
+            QMessageBox.warning(self, TITULO_FECHA_INVALIDA, "Ingrese fechas válidas en formato DD/MM/AAAA.")
+            return None
+        try:
+            salario = float(datos[7])
+            if salario < 0:
+                QMessageBox.warning(self, "Salario inválido", "El salario no puede ser negativo.")
+                return None
+            return salario
+        except ValueError:
+            QMessageBox.warning(self, "Salario inválido", "Ingrese un salario numérico válido.")
+            return None
     
     def guardar_empleado(self):
         id_emp = self.input_id.text().strip()
@@ -680,19 +707,19 @@ class VentanaPrincipal(QWidget):
                 if exito:
                     QMessageBox.information(
                         self,
-                        "TITULO_TEXTO"
+                        TITULO_EXITO, "Registro eliminado correctamente."
                     )
                     self.cargar_tabla()
                 else:
                     QMessageBox.warning(
                         self,
-                        "TITULO_ERROR_CONEXION"
+                        TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
                     )
 
             else:
                 QMessageBox.critical(
                     self,
-                    "TITULO_ERROR_CONEXION"
+                    TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
 
                 )
 
@@ -811,7 +838,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "MSG_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
 
@@ -827,7 +854,7 @@ class VentanaPrincipal(QWidget):
         if exito:
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
 
             self.cargar_tabla()
@@ -863,7 +890,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
         try:
@@ -888,13 +915,13 @@ class VentanaPrincipal(QWidget):
         if not id_depto or not nombre:
             QMessageBox.warning(
                 self,
-                "TITULO_CAMPOS_OBLIGATORIOS"
+                TITULO_FECHA_INVALIDA, "Formato de fecha inválido."
             )
             return
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
         try:
@@ -904,7 +931,7 @@ class VentanaPrincipal(QWidget):
         if resultado == "INTEGRIDAD":
             QMessageBox.warning(
                 self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
             )
         elif resultado is True:
             self.cargar_tabla_departamentos()
@@ -913,7 +940,7 @@ class VentanaPrincipal(QWidget):
             self.input_gerente_departamento.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
@@ -935,7 +962,7 @@ class VentanaPrincipal(QWidget):
         if fila < 0:
             QMessageBox.warning(
                 self,
-                "TITULO_SIN_SELECCION"
+                TITULO_SIN_SELECCION, "Seleccione un registro de la tabla."
             )
             return
         self.cargar_departamento_seleccionado(fila, 0)
@@ -946,14 +973,13 @@ class VentanaPrincipal(QWidget):
         gerente_id = self.input_gerente_departamento.text().strip()
         if not id_depto or not nombre:
             QMessageBox.warning(
-                self,
-                "TITULO_CAMPOS_OBLIGATORIOS"
+                TITULO_FECHA_INVALIDA, "Formato de fecha inválido."
             )
             return
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
             )
             return
         try:
@@ -963,7 +989,7 @@ class VentanaPrincipal(QWidget):
         if resultado == "INTEGRIDAD":
             QMessageBox.warning(
                 self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
             )
         elif resultado is True:
             self.cargar_tabla_departamentos()
@@ -972,7 +998,7 @@ class VentanaPrincipal(QWidget):
             self.input_gerente_departamento.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
@@ -986,7 +1012,7 @@ class VentanaPrincipal(QWidget):
         if fila < 0:
             QMessageBox.warning(
                 self,
-                "TITULO_SIN_SELECCION"
+                TITULO_SIN_SELECCION, "Seleccione un registro de la tabla."
             )
             return
         id_depto = self.tabla_departamentos.item(fila, 0).text()
@@ -1003,7 +1029,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR_CONEXION"
+                TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION
             )
             return
         try:
@@ -1023,7 +1049,7 @@ class VentanaPrincipal(QWidget):
             self.input_gerente_departamento.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
@@ -1035,7 +1061,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
              )
             return
         try:
@@ -1065,7 +1091,7 @@ class VentanaPrincipal(QWidget):
         if not all([id_registro, id_emp, id_proy, fecha_str, horas_str, descripcion]):
             QMessageBox.warning(
                 self,
-                "TITULO_CAMPOS_OBLIGATORIOS"
+                TITULO_FECHA_INVALIDA, "Formato de fecha inválido."
             )
             return
         try:
@@ -1088,7 +1114,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
             )
             return
         try:
@@ -1118,7 +1144,7 @@ class VentanaPrincipal(QWidget):
             self.input_desc_tiempo.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
@@ -1140,7 +1166,7 @@ class VentanaPrincipal(QWidget):
         if fila < 0:
             QMessageBox.warning(
                 self,
-                "TITULO_SIN_SELECCION"
+                TITULO_SIN_SELECCION, "Seleccione un registro de la tabla."
              )
             return
         self.cargar_tiempo_seleccionado(fila, 0)
@@ -1155,7 +1181,7 @@ class VentanaPrincipal(QWidget):
         if not all([id_registro, id_emp, id_proy, fecha_str, horas_str, descripcion]):
             QMessageBox.warning(
                 self,
-               "TITULO_CAMPOS_OBLIGATORIOS"
+               TITULO_FECHA_INVALIDA, "Formato de fecha inválido."
              )
             return
         try:
@@ -1178,7 +1204,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                 "TITULO_ERROR"
+                 TITULO_ERROR, "Ocurrió un error al procesar la operación."
              )
             return
         try:
@@ -1195,7 +1221,7 @@ class VentanaPrincipal(QWidget):
         if resultado == "INTEGRIDAD":
             QMessageBox.warning(
                  self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
              )
         elif resultado is True:
             self.cargar_tabla_tiempos()
@@ -1207,19 +1233,19 @@ class VentanaPrincipal(QWidget):
             self.input_desc_tiempo.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
             QMessageBox.warning(
                 self,
-                "TITULO_ADVERTENCIA"
+                "Advertencia", "Verifique los datos ingresados o la integridad del registro."
             )
     def eliminar_tiempo(self):
         fila = self.tabla_tiempos.currentRow()
         if fila < 0:
             QMessageBox.warning(
                 self,
-                 "TITULO_SIN_SELECCION"
+                 TITULO_SIN_SELECCION, "Seleccione un registro de la tabla."
             )
             return
         id_registro = self.tabla_tiempos.item(fila, 0).text()
@@ -1235,7 +1261,7 @@ class VentanaPrincipal(QWidget):
         if not self.db.conectar():
             QMessageBox.critical(
                 self,
-                "TITULO_ERROR"
+                TITULO_ERROR, "Ocurrió un error al procesar la operación."
             )
             return
         try:
@@ -1252,7 +1278,7 @@ class VentanaPrincipal(QWidget):
             self.input_desc_tiempo.clear()
             QMessageBox.information(
                 self,
-                "TITULO_EXITO"
+                TITULO_EXITO, "Operación realizada correctamente."
             )
         else:
              QMessageBox.warning(
@@ -1298,7 +1324,7 @@ class VentanaPrincipal(QWidget):
         )
         self.lbl_resultado_clima.setText(texto_resumen)
         if not self.db.conectar():
-            QMessageBox.critical("TITULO_ERROR")
+            QMessageBox.critical(self, TITULO_ERROR_CONEXION, MSG_ERROR_CONEXION)
             return
         try:
             guardado = self.db.guardar_consulta_clima(
@@ -1365,7 +1391,7 @@ class VentanaPrincipal(QWidget):
 
         if guardado == "INTEGRIDAD":
             QMessageBox.warning(
-                self, "TITULO_ADVERTENCIA"
+                self, "Advertencia", "Verifique los datos ingresados o la integridad del registro."
             )
         elif guardado is True:
             self.cargar_tablas_servicios_externos()
